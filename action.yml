@@ -1,0 +1,144 @@
+name: JS Run Tests
+description: Runs default lint and test commands from package.json and collects output
+
+inputs:
+  output-path:
+    description: Path or name of directory to store results
+    required: true
+    default: .ci-results
+  lint-results-file:
+    description: Filename for lint results
+    required: true
+    default: js-lint-results.txt
+  test-results-file:
+    description: Filename for test results
+    required: true
+    default: js-test-results.txt
+  pr-comment-file:
+    description: Filename for PR comment
+    required: true
+    default: js-pr-comment.md
+  email-file:
+    description: Filename for email body
+    required: true
+    default: js-overview-email.txt
+
+outputs:
+  lint-result:
+    description: '"PASS" if linting check passed, "FAIL" if problems found'
+    value: ${{ steps.lint-results.outputs.result }}
+  lint-result-emoji:
+    description: 'Emoji code representation of lint result'
+    value: ${{ steps.lint-results.outputs.result-emoji }}
+  lint-success:
+    description: 'Boolean of lint result'
+    value: ${{ steps.lint-results.outputs.success }}
+  lint-summary:
+    description: 'Text summary of lint results'
+    value: ${{ steps.lint-results.outputs.summary }}
+
+  test-result:
+    description: '"PASS" if all tests passed, "FAIL" if problems found'
+    value: ${{ steps.test-results.outputs.result }}
+  test-result-emoji:
+    description: 'Emoji code representation of test result'
+    value: ${{ steps.test-results.outputs.result-emoji }}
+  test-success:
+    description: 'Boolean of test result'
+    value: ${{ steps.test-results.outputs.success }}
+  test-coverage:
+    description: 'Test coverage summary'
+    value: ${{ steps.test-results.outputs.coverage }}
+  test-summary:
+    description: 'Text summary of test results'
+    value: ${{ steps.test-results.outputs.summary }}
+
+runs:
+  using: composite
+  steps:
+    # Clear / create output
+    - run: |
+        rm -rf ${{ inputs.output-path }}
+        mkdir ${{ inputs.output-path }}
+      shell: bash
+
+    # Run & interpret linter
+    - id: lint
+      name: Lint Files
+      run: (yarn lint || :) 2>&1 | sed '/error Command failed/,$d' | tee ${{ inputs.output-path }}/${{ inputs.lint-results-file }}
+      shell: bash
+
+    - id: lint-results
+      name: Process Test Results
+      run: |
+        FILE=${{ inputs.output-path }}/${{ inputs.lint-results-file }}
+        RESULT=$([ "$(grep -P '.*\d+ problems' $FILE)" != "" ] && echo "FAIL" || echo "PASS")
+        RESULT_EMOJI=$([ "$RESULT" == "PASS" ] && echo ':white_check_mark:' || echo ':x:')
+        SUCCESS=$([ "$RESULT" == "PASS" ] && echo 'true' || echo 'false')
+        SUMMARY=$(grep -P '\d+ problems \(\d+ errors' $FILE | sed -E 's/^.*\(//;s/\).*$//')
+        echo ::set-output name=result::${RESULT}
+        echo ::set-output name=result-emoji::${RESULT_EMOJI}
+        echo ::set-output name=success::${SUCCESS}
+        echo ::set-output name=summary::${SUMMARY}
+      shell: bash
+
+    # Run & interpret tests
+    - id: test
+      name: Run Tests
+      run: (yarn test --coverage || :) 2>&1 | tee ${{ inputs.output-path }}/js-test-results.txt
+      shell: bash
+
+    - id: test-results
+      name: Process Test Results
+      run: |
+        FILE=${{ inputs.output-path }}/js-test-results.txt
+        RESULT=$([ "$(grep -P 'Tests:.*\d+ failed' $FILE)" != "" ] && echo "FAIL" || echo "PASS")
+        RESULT_EMOJI=$([ "$RESULT" == "PASS" ] && echo ':white_check_mark:' || echo ':x:')
+        SUCCESS=$([ "$RESULT" == "PASS" ] && echo 'true' || echo 'false')
+        COVERAGE=$(sed -n '/Coverage summary/,+4p' $FILE | fgrep 'Lines' | awk '{ print $3 }')
+        SUMMARY=$(fgrep 'Tests:' $FILE | sed -E 's/Tests:\s+//g')
+        echo ::set-output name=result::${RESULT}
+        echo ::set-output name=result-emoji::${RESULT_EMOJI}
+        echo ::set-output name=success::${SUCCESS}
+        echo ::set-output name=coverage::${COVERAGE}
+        echo ::set-output name=summary::${SUMMARY}
+      shell: bash
+
+    # Create PR Text
+    - id: create-pr-comment
+      name: Create PR summary
+      env:
+        RESULT_JS_LINT: ${{ steps.lint-results.outputs.result }}
+        RESULT_EMOJI_JS_LINT: ${{ steps.lint-results.outputs.result-emoji }}
+        SUMMARY_JS_LINT: ${{ steps.lint-results.outputs.summary }}
+        RESULT_JS: ${{ steps.test-results.outputs.result }}
+        RESULT_EMOJI_JS: ${{ steps.test-results.outputs.result-emoji }}
+        COVERAGE_JS: ${{ steps.test-results.outputs.coverage }}
+        SUMMARY_JS: ${{ steps.test-results.outputs.summary }}
+      run: |
+        cd ${{ inputs.output-path }}
+        ALL_EMOJI=$([ "$RESULT_JS" == "PASS" -a "$RESULT_JS_LINT" == "PASS" ] && echo ':white_check_mark:' || echo ':x:')
+        echo "# $ALL_EMOJI Test Results"                                       > ${{ inputs.pr-comment-file }}
+        echo "## $RESULT_EMOJI_JS_LINT Linting $RESULT_JS_LINT"               >> ${{ inputs.pr-comment-file }}
+        echo "### $SUMMARY_JS_LINT"                                           >> ${{ inputs.pr-comment-file }}
+        echo "## $RESULT_EMOJI_JS Jest Tests $RESULT_JS"                      >> ${{ inputs.pr-comment-file }}
+        echo "### $SUMMARY_JS; Coverage: $COVERAGE_JS"                        >> ${{ inputs.pr-comment-file }}
+        echo '```'                                                            >> ${{ inputs.pr-comment-file }}
+        cat ${{ inputs.test-results-file }} | sed -n '/Coverage summary/,$p'  >> ${{ inputs.pr-comment-file }}
+        echo '```'                                                            >> ${{ inputs.pr-comment-file }}
+      shell: bash
+
+    # Create Email Text
+    - id: create-email
+      name: Create email body
+      run: |
+        [ -f ${{ inputs.output-path }}/git-status.txt ] && cp ${{ inputs.output-path }}/git-status.txt ${{ inputs.output-path }}/${{ inputs.email-file }}
+        [ -f ${{ inputs.output-path }}/git-status.txt ] && echo "------------------"               >> .ci-results/${{ inputs.email-file }}
+        [ -f ${{ inputs.output-path }}/s3-path.txt ] && echo "S3 Results can be found here:"       >> .ci-results/${{ inputs.email-file }}
+        [ -f ${{ inputs.output-path }}/s3-path.txt ] && cat ${{ inputs.output-path }}/s3-path.txt  >> .ci-results/${{ inputs.email-file }}
+        [ -f ${{ inputs.output-path }}/s3-path.txt ] && echo "------------------"                  >> .ci-results/${{ inputs.email-file }}
+        cat ${{ inputs.output-path }}/${{ inputs.lint-results-file }}  >> .ci-results/${{ inputs.email-file }}
+        echo "------------------"                                      >> .ci-results/${{ inputs.email-file }}
+        cat ${{ inputs.output-path }}/${{ inputs.test-results-file }}  >> .ci-results/${{ inputs.email-file }}
+      shell: bash
+
