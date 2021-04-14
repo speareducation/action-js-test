@@ -9,19 +9,19 @@ inputs:
   lint-results-file:
     description: Filename for lint results
     required: true
-    default: js-lint-results.txt
+    default: ${{ inputs.output-path }}/js-lint-results.txt
   test-results-file:
     description: Filename for test results
     required: true
-    default: js-test-results.txt
+    default: ${{ inputs.output-path }}/js-test-results.txt
   pr-comment-file:
     description: Filename for PR comment
     required: true
-    default: js-pr-comment.md
+    default: ${{ inputs.output-path }}/js-pr-comment.md
   email-file:
     description: Filename for email body
     required: true
-    default: js-overview-email.txt
+    default: ${{ inputs.output-path }}/js-overview-email.txt
 
 outputs:
   lint-result:
@@ -65,13 +65,13 @@ runs:
     # Run & interpret linter
     - id: lint
       name: Lint Files
-      run: (yarn lint || :) 2>&1 | sed '/error Command failed/,$d' | tee ${{ inputs.output-path }}/${{ inputs.lint-results-file }}
+      run: (yarn lint || :) 2>&1 | sed '/error Command failed/,$d' | tee ${{ inputs.lint-results-file }}
       shell: bash
 
     - id: lint-results
       name: Process Test Results
       run: |
-        FILE=${{ inputs.output-path }}/${{ inputs.lint-results-file }}
+        FILE=${{ inputs.lint-results-file }}
         RESULT=$([ "$(grep -P '.*\d+ problems' $FILE)" != "" ] && echo "FAIL" || echo "PASS")
         RESULT_EMOJI=$([ "$RESULT" == "PASS" ] && echo ':white_check_mark:' || echo ':x:')
         SUCCESS=$([ "$RESULT" == "PASS" ] && echo 'true' || echo 'false')
@@ -85,13 +85,13 @@ runs:
     # Run & interpret tests
     - id: test
       name: Run Tests
-      run: (yarn test --coverage || :) 2>&1 | tee ${{ inputs.output-path }}/js-test-results.txt
+      run: (yarn test --coverage || :) 2>&1 | tee ${{ inputs.test-results-file }}
       shell: bash
 
     - id: test-results
       name: Process Test Results
       run: |
-        FILE=${{ inputs.output-path }}/js-test-results.txt
+        FILE=${{inputs.test-results-file}}
         RESULT=$([ "$(grep -P 'Tests:.*\d+ failed' $FILE)" != "" ] && echo "FAIL" || echo "PASS")
         RESULT_EMOJI=$([ "$RESULT" == "PASS" ] && echo ':white_check_mark:' || echo ':x:')
         SUCCESS=$([ "$RESULT" == "PASS" ] && echo 'true' || echo 'false')
@@ -132,13 +132,28 @@ runs:
     - id: create-email
       name: Create email body
       run: |
-        [ -f ${{ inputs.output-path }}/git-status.txt ] && cp ${{ inputs.output-path }}/git-status.txt ${{ inputs.output-path }}/${{ inputs.email-file }}
-        [ -f ${{ inputs.output-path }}/git-status.txt ] && echo "------------------"               >> .ci-results/${{ inputs.email-file }}
-        [ -f ${{ inputs.output-path }}/s3-path.txt ] && echo "S3 Results can be found here:"       >> .ci-results/${{ inputs.email-file }}
-        [ -f ${{ inputs.output-path }}/s3-path.txt ] && cat ${{ inputs.output-path }}/s3-path.txt  >> .ci-results/${{ inputs.email-file }}
-        [ -f ${{ inputs.output-path }}/s3-path.txt ] && echo "------------------"                  >> .ci-results/${{ inputs.email-file }}
-        cat ${{ inputs.output-path }}/${{ inputs.lint-results-file }}  >> .ci-results/${{ inputs.email-file }}
-        echo "------------------"                                      >> .ci-results/${{ inputs.email-file }}
-        cat ${{ inputs.output-path }}/${{ inputs.test-results-file }}  >> .ci-results/${{ inputs.email-file }}
+        [ -f ${{ inputs.output-path }}/git-status.txt ] && cp ${{ inputs.output-path }}/git-status.txt ${{ inputs.email-file }}
+        [ -f ${{ inputs.output-path }}/git-status.txt ] && echo "------------------"                >> ${{ inputs.email-file }}
+        [ -f ${{ inputs.output-path }}/s3-path.txt ] && echo "S3 Results can be found here:"        >> ${{ inputs.email-file }}
+        [ -f ${{ inputs.output-path }}/s3-path.txt ] && cat ${{ inputs.output-path }}/s3-path.txt   >> ${{ inputs.email-file }}
+        [ -f ${{ inputs.output-path }}/s3-path.txt ] && echo "------------------"                   >> ${{ inputs.email-file }}
+        cat ${{ inputs.output-path }}/${{ inputs.lint-results-file }}                               >> ${{ inputs.email-file }}
+        echo "------------------"                                                                   >> ${{ inputs.email-file }}
+        cat ${{ inputs.output-path }}/${{ inputs.test-results-file }}                               >> ${{ inputs.email-file }}
       shell: bash
 
+    - id: output-summary
+      run: |
+        echo "------------------"
+        echo "LINT RESULTS"
+        cat ${{ inputs.lint-results-file }}
+        echo "------------------"
+        echo "TEST RESULTS"
+        cat ${{ inputs.test-results-file }}
+        echo "------------------"
+        echo "PR COMMENT"
+        cat ${{ inputs.pr-comment-file }}
+        echo "------------------"
+        echo "EMAIL"
+        cat ${{ inputs.email-file }}
+      shell: bash
