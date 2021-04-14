@@ -6,17 +6,13 @@
 Runs `yarn lint` and `yarn test --coverage` using scripts from package.json. Usually this would be eslint
 and Jest.
 
-_This action should probably not be used directly_, see test-and-notify
-
-Example:
-
-```
-
-```
-
 ### Inputs
 
-* `output-path` - Path or name of directory to store results, default './.ci-results'
+* `output-path` - Path or name of directory to store results, default: ./.ci-results
+* `lint-results-file` - Filename for lint results, default: js-lint-results.txt
+* `test-results-file` - Filename for test results, default: js-test-results.txt
+* `pr-comment-file` - Filename for PR comment, default: js-pr-comment.md
+* `email-file` - Filename for email body, default: js-overview-email.txt
 
 ### Outputs
 
