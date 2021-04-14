@@ -91,7 +91,7 @@ runs:
     - id: test-results
       name: Process Test Results
       run: |
-        FILE=${{inputs.test-results-file}}
+        FILE=${{ inputs.output-path }}/${{inputs.test-results-file}}
         RESULT=$([ "$(grep -P 'Tests:.*\d+ failed' $FILE)" != "" ] && echo "FAIL" || echo "PASS")
         RESULT_EMOJI=$([ "$RESULT" == "PASS" ] && echo ':white_check_mark:' || echo ':x:')
         SUCCESS=$([ "$RESULT" == "PASS" ] && echo 'true' || echo 'false')
