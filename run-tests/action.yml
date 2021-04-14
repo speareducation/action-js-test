@@ -1,0 +1,86 @@
+name: JS Test & Lint
+description: Runs default lint and test commands from package.json and collects output
+
+inputs:
+  output-path:
+    description: Path or name of directory to store results
+    required: true
+    default: .ci-results
+
+outputs:
+  lint-result:
+    description: '"PASS" if linting check passed, "FAIL" if problems found'
+    value: ${{ steps.lint-results.outputs.result }}
+  lint-result-emoji:
+    description: 'Emoji code representation of lint result'
+    value: ${{ steps.lint-results.outputs.result-emoji }}
+  lint-success:
+    description: 'Boolean of lint result'
+    value: ${{ steps.lint-results.outputs.success }}
+  lint-summary:
+    description: 'Text summary of lint results'
+    value: ${{ steps.lint-results.outputs.summary }}
+
+  test-result:
+    description: '"PASS" if all tests passed, "FAIL" if problems found'
+    value: ${{ steps.test-results.outputs.result }}
+  test-result-emoji:
+    description: 'Emoji code representation of test result'
+    value: ${{ steps.test-results.outputs.result-emoji }}
+  test-success:
+    description: 'Boolean of test result'
+    value: ${{ steps.test-results.outputs.success }}
+  test-coverage:
+    description: 'Test coverage summary'
+    value: ${{ steps.test-results.outputs.coverage }}
+  test-summary:
+    description: 'Text summary of test results'
+    value: ${{ steps.test-results.outputs.summary }}
+
+runs:
+  using: composite
+  steps:
+    - run: |
+        rm -rf ${{ inputs.output-path }}
+        mkdir ${{ inputs.output-path }}
+      shell: bash
+
+    - id: lint
+      name: Lint Files
+      run: (yarn lint || :) 2>&1 | sed '/error Command failed/,$d' | tee ${{ inputs.output-path }}/js-lint-results.txt
+      shell: bash
+
+    - id: lint-results
+      name: Process Test Results
+      run: |
+        FILE=${{ inputs.output-path }}/js-lint-results.txt
+        RESULT=$([ "$(grep -P '.*\d+ problems' $FILE)" != "" ] && echo "FAIL" || echo "PASS")
+        RESULT_EMOJI=$([ "$RESULT" == "PASS" ] && echo ':white_check_mark:' || echo ':x:')
+        SUCCESS=$([ "$RESULT" == "PASS" ] && echo 'true' || echo 'false')
+        SUMMARY=$(grep -P '\d+ problems \(\d+ errors' $FILE | sed -E 's/^.*\(//;s/\).*$//')
+        echo ::set-output name=result::${RESULT}
+        echo ::set-output name=result-emoji::${RESULT_EMOJI}
+        echo ::set-output name=success::${SUCCESS}
+        echo ::set-output name=summary::${SUMMARY}
+      shell: bash
+
+    - id: test
+      name: Run Tests
+      run: (yarn test --coverage || :) 2>&1 | tee ${{ inputs.output-path }}/js-test-results.txt
+      shell: bash
+
+    - id: test-results
+      name: Process Test Results
+      run: |
+        FILE=${{ inputs.output-path }}/js-test-results.txt
+        RESULT=$([ "$(grep -P 'Tests:.*\d+ failed' $FILE)" != "" ] && echo "FAIL" || echo "PASS")
+        RESULT_EMOJI=$([ "$RESULT" == "PASS" ] && echo ':white_check_mark:' || echo ':x:')
+        SUCCESS=$([ "$RESULT" == "PASS" ] && echo 'true' || echo 'false')
+        COVERAGE=$(sed -n '/Coverage summary/,+4p' $FILE | fgrep 'Lines' | awk '{ print $3 }')
+        SUMMARY=$(fgrep 'Tests:' $FILE | sed -E 's/Tests:\s+//g')
+        echo ::set-output name=result::${RESULT}
+        echo ::set-output name=result-emoji::${RESULT_EMOJI}
+        echo ::set-output name=success::${SUCCESS}
+        echo ::set-output name=coverage::${COVERAGE}
+        echo ::set-output name=summary::${SUMMARY}
+      shell: bash
