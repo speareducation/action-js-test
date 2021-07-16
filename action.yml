@@ -72,10 +72,10 @@ runs:
       name: Process Test Results
       run: |
         FILE=${{ inputs.output-path }}/${{ inputs.lint-results-file }}
-        RESULT=$([ "$(grep -P '.*\d+ problems' $FILE)" != "" ] && echo "FAIL" || echo "PASS")
+        RESULT=$([ -z $(grep -P '.*\d+ problems' $FILE || :) ] && echo "PASS" || echo "FAIL")
         RESULT_EMOJI=$([ "$RESULT" == "PASS" ] && echo ':white_check_mark:' || echo ':x:')
         SUCCESS=$([ "$RESULT" == "PASS" ] && echo 'true' || echo 'false')
-        SUMMARY=$(grep -P '\d+ problems \(\d+ errors' $FILE | sed -E 's/^.*\(//;s/\).*$//')
+        SUMMARY="$(grep -P '\d+ problems \(\d+ errors' $FILE || :)" | sed -E 's/^.*\(//;s/\).*$//'
         echo ::set-output name=result::${RESULT}
         echo ::set-output name=result-emoji::${RESULT_EMOJI}
         echo ::set-output name=success::${SUCCESS}
@@ -91,12 +91,12 @@ runs:
     - id: test-results
       name: Process Test Results
       run: |
-        FILE=${{ inputs.output-path }}/${{inputs.test-results-file}}
-        RESULT=$([ "$(grep -P 'Tests:.*\d+ failed' $FILE)" != "" ] && echo "FAIL" || echo "PASS")
+        FILE=${{ inputs.output-path }}/${{ inputs.test-results-file }}
+        RESULT=$([ -z $(grep -P 'Tests:.*\d+ failed' $FILE || :) ] && echo "PASS" || echo "FAIL")
         RESULT_EMOJI=$([ "$RESULT" == "PASS" ] && echo ':white_check_mark:' || echo ':x:')
         SUCCESS=$([ "$RESULT" == "PASS" ] && echo 'true' || echo 'false')
-        COVERAGE=$(sed -n '/Coverage summary/,+4p' $FILE | fgrep 'Lines' | awk '{ print $3 }')
-        SUMMARY=$(fgrep 'Tests:' $FILE | sed -E 's/Tests:\s+//g')
+        COVERAGE=$(sed -n '/Coverage summary/,+4p' $FILE | (fgrep 'Lines' || :) | awk '{ print $3 }')
+        SUMMARY="$(fgrep 'Tests:' $FILE || :)" | sed -E 's/Tests:\s+//g'
         echo ::set-output name=result::${RESULT}
         echo ::set-output name=result-emoji::${RESULT_EMOJI}
         echo ::set-output name=success::${SUCCESS}
