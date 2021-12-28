@@ -58,8 +58,11 @@ runs:
   steps:
     # Clear / create output
     - run: |
-        rm -rf ${{ inputs.output-path }}
-        mkdir ${{ inputs.output-path }}
+        rm -f ${{ inputs.output-path }}/${{ inputs.lint-results-file }}
+        rm -f ${{ inputs.output-path }}/${{ inputs.test-results-file }}
+        rm -f ${{ inputs.output-path }}/${{ inputs.pr-comment-file }}
+        rm -f ${{ inputs.output-path }}/${{ inputs.email-file }}
+        mkdir -p ${{ inputs.output-path }}
       shell: bash
 
     # Run & interpret linter

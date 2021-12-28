@@ -1,6 +1,5 @@
 # Github Actions for JS Test & Lint
 
-
 ## run-tests
 
 Runs `yarn lint` and `yarn test --coverage` using scripts from package.json. Usually this would be eslint
