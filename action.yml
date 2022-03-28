@@ -72,7 +72,7 @@ runs:
       shell: bash
 
     - id: lint-results
-      name: Process Test Results
+      name: Process Lint Results
       run: |
         FILE=${{ inputs.output-path }}/${{ inputs.lint-results-file }}
         RESULT=$([ -z $(grep -P '.*\d+ problems' $FILE || :) ] && echo "PASS" || echo "FAIL")
