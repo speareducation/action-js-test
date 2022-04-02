@@ -88,7 +88,7 @@ runs:
     # Run & interpret tests
     - id: test
       name: Run Tests
-      run: (yarn test --coverage || :) 2>&1 | tee ${{ inputs.output-path }}/${{ inputs.test-results-file }}
+      run: (yarn test:coverage || yarn test --coverage || :) 2>&1 | tee ${{ inputs.output-path }}/${{ inputs.test-results-file }}
       shell: bash
 
     - id: test-results
