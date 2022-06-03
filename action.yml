@@ -124,7 +124,7 @@ runs:
         echo "# $ALL_EMOJI Test Results"                             > $FILE
         echo "## $RESULT_EMOJI_JS_LINT Linting $RESULT_JS_LINT"     >> $FILE
         echo "### $SUMMARY_JS_LINT"                                 >> $FILE
-        echo "## $RESULT_EMOJI_JS Jest Tests $RESULT_JS"            >> $FILE
+        echo "## $RESULT_EMOJI_JS JS Tests $RESULT_JS"              >> $FILE
         echo "### $SUMMARY_JS; Coverage: $COVERAGE_JS"              >> $FILE
         echo '```'                                                  >> $FILE
         cat ${{ inputs.output-path }}/${{ inputs.test-results-file }} | sed -n '/Coverage summary/,$p'  >> $FILE
