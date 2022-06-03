@@ -108,7 +108,7 @@ runs:
         RESULT_EMOJI=$([ "$RESULT" == "PASS" ] && echo ':white_check_mark:' || echo ':x:')
         SUCCESS=$([ "$RESULT" == "PASS" ] && echo 'true' || echo 'false')
         COVERAGE=$(sed -n '/Coverage summary/,+4p' $FILE | (fgrep 'Lines' || :) | awk '{ print $3 }')
-        SUMMARY="$(fgrep 'Tests:' $FILE || :)" | sed -E 's/Tests:\s+//g'
+        SUMMARY="$(grep -E 'Tests[^0-9]+[0-9]' $FILE || :)" | sed -E 's/Tests:?\s+//g'
         echo ::set-output name=result::${RESULT}
         echo ::set-output name=result-emoji::${RESULT_EMOJI}
         echo ::set-output name=success::${SUCCESS}
