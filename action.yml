@@ -89,10 +89,10 @@ runs:
     - id: test
       name: Run Tests
       run: |
-        if [[ "$(jq '.scripts["test:coverage"]' package.json)" != "null" ]]
+        if [[ "$(jq -r '.scripts["test:coverage"]' package.json)" != "null" ]]
         then 
           yarn test:coverage 2>&1 | tee ${{ inputs.output-path }}/${{ inputs.test-results-file }}
-        elif [[ "$(jq '.scripts["test"]' package.json)" != "null" ]]
+        elif [[ "$(jq -r '.scripts["test"]' package.json)" != "null" ]]
         then 
           yarn test --coverage 2>&1 | tee ${{ inputs.output-path }}/${{ inputs.test-results-file }}
         else
