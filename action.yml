@@ -88,7 +88,16 @@ runs:
     # Run & interpret tests
     - id: test
       name: Run Tests
-      run: (yarn test:coverage || yarn test --coverage || :) 2>&1 | tee ${{ inputs.output-path }}/${{ inputs.test-results-file }}
+      run: |
+        if [[ "$(jq '.scripts["test:coverage"]' package.json)" != "null" ]]
+        then 
+          yarn test:coverage 2>&1 | tee ${{ inputs.output-path }}/${{ inputs.test-results-file }}
+        elif [[ "$(jq '.scripts["test"]' package.json)" != "null" ]]
+        then 
+          yarn test --coverage 2>&1 | tee ${{ inputs.output-path }}/${{ inputs.test-results-file }}
+        else
+          touch ${{ inputs.output-path }}/${{ inputs.test-results-file }}
+        fi
       shell: bash
 
     - id: test-results
