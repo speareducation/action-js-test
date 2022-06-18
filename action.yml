@@ -68,7 +68,7 @@ runs:
     # Run & interpret linter
     - id: lint
       name: Lint Files
-      run: (yarn lint || :) 2>&1 | sed '/error Command failed/,$d' | tee ${{ inputs.output-path }}/${{ inputs.lint-results-file }}
+      run: (npm run lint || :) 2>&1 | sed '/error Command failed/,$d' | tee ${{ inputs.output-path }}/${{ inputs.lint-results-file }}
       shell: bash
 
     - id: lint-results
@@ -90,11 +90,11 @@ runs:
       name: Run Tests
       run: |
         if [[ "$(jq -r '.scripts["test:coverage"]' package.json)" != "null" ]]
-        then 
-          yarn test:coverage 2>&1 | tee ${{ inputs.output-path }}/${{ inputs.test-results-file }}
+        then
+          npm run test:coverage 2>&1 | tee ${{ inputs.output-path }}/${{ inputs.test-results-file }}
         elif [[ "$(jq -r '.scripts["test"]' package.json)" != "null" ]]
-        then 
-          yarn test --coverage 2>&1 | tee ${{ inputs.output-path }}/${{ inputs.test-results-file }}
+        then
+          npm run test --coverage 2>&1 | tee ${{ inputs.output-path }}/${{ inputs.test-results-file }}
         else
           touch ${{ inputs.output-path }}/${{ inputs.test-results-file }}
         fi
