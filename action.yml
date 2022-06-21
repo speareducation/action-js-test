@@ -94,7 +94,7 @@ runs:
           npm run test:coverage 2>&1 | tee ${{ inputs.output-path }}/${{ inputs.test-results-file }}
         elif [[ "$(jq -r '.scripts["test"]' package.json)" != "null" ]]
         then
-          npm run test --coverage 2>&1 | tee ${{ inputs.output-path }}/${{ inputs.test-results-file }}
+          npm run test -- --coverage 2>&1 | tee ${{ inputs.output-path }}/${{ inputs.test-results-file }}
         else
           touch ${{ inputs.output-path }}/${{ inputs.test-results-file }}
         fi
