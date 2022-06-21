@@ -2,8 +2,8 @@
 
 ## run-tests
 
-Runs `npm run lint` and `npm run test --coverage` using scripts from package.json. Usually this would be eslint
-and Jest.
+Runs `npm run lint` and either `npm run test:coverage` or `npm run test -- --coverage` using scripts
+from package.json. Usually this would be eslint and Jest.
 
 ### Inputs
 
