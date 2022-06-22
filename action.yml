@@ -132,13 +132,14 @@ runs:
         SUCCESS=$([ "$RESULT" == "PASS" ] && echo 'true' || echo 'false')
         COVERAGE=$(sed -n '/Coverage summary/,+4p' $FILE | (fgrep 'Lines' || :) | awk '{ print $3 }')
         SUMMARY="$(grep -P '(\d+ tests? (pass|fail)|Tests?:?\s+\d+)' $FILE || :)" | sed -E 's/Tests?:?\s+//ig; s/^\s*//; s/\s*$//'
-        echo $SUMMARY ($RUNNER)
+        SUMMARY="$SUMMARY ($RUNNER)"
+        echo $SUMMARY
 
         echo ::set-output name=result::${RESULT}
         echo ::set-output name=result-emoji::${RESULT_EMOJI}
         echo ::set-output name=success::${SUCCESS}
         echo ::set-output name=coverage::${COVERAGE}
-        echo ::set-output name=summary::${SUMMARY} (${RUNNER})
+        echo ::set-output name=summary::${SUMMARY}
       shell: bash
 
     # Create PR Text
