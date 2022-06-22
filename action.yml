@@ -128,21 +128,17 @@ runs:
         FILE=${{ inputs.output-path }}/${{ inputs.test-results-file }}
 
         RESULT=$(grep -Pq '(\d+.*tests?|Tests?:.*\d+) failed' $FILE && echo "FAIL" || echo "PASS")
-        echo $RESULT
         RESULT_EMOJI=$([ "$RESULT" == "PASS" ] && echo ':white_check_mark:' || echo ':x:')
-        echo $RESULT_EMOJI
         SUCCESS=$([ "$RESULT" == "PASS" ] && echo 'true' || echo 'false')
-        echo $SUCCESS
         COVERAGE=$(sed -n '/Coverage summary/,+4p' $FILE | (fgrep 'Lines' || :) | awk '{ print $3 }')
-        echo $COVERAGE
-        SUMMARY="$(grep -P '(\d+ tests? (pass|fail)|Tests?:?\s+\d+)' $FILE | sed -E 's/tests?\s+//g; s/Tests?:?\s+//g; s/^\s*//; s/\s*$//') ($RUNNER)"
-        echo $SUMMARY
+        SUMMARY="$(grep -P '(\d+ tests? (pass|fail)|Tests?:?\s+\d+)' $FILE || :)" | sed -E 's/Tests?:?\s+//ig; s/^\s*//; s/\s*$//'
+        echo $SUMMARY ($RUNNER)
 
         echo ::set-output name=result::${RESULT}
         echo ::set-output name=result-emoji::${RESULT_EMOJI}
         echo ::set-output name=success::${SUCCESS}
         echo ::set-output name=coverage::${COVERAGE}
-        echo ::set-output name=summary::${SUMMARY}
+        echo ::set-output name=summary::${SUMMARY} (${RUNNER})
       shell: bash
 
     # Create PR Text
