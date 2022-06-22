@@ -70,7 +70,7 @@ runs:
       name: Lint Files
       env:
         CI: '1'
-      run: (npm run lint || :) 2>&1 | sed '/error Command failed/,$d' | tee ${{ inputs.output-path }}/${{ inputs.lint-results-file }}
+      run: (npm run lint || :) 2>&1 | sed '/error Command failed/,$d' | tee >(sed -r 's/\x1b\[[0-9;]*m//g' > ${{ inputs.output-path }}/${{ inputs.lint-results-file }})
       shell: bash
 
     - id: lint-results
@@ -95,10 +95,10 @@ runs:
       run: |
         if [[ "$(jq -r '.scripts["test:coverage"]' package.json)" != "null" ]]
         then
-          npm run test:coverage 2>&1 | tee ${{ inputs.output-path }}/${{ inputs.test-results-file }}
+          npm run test:coverage 2>&1 | tee >(sed -r 's/\x1b\[[0-9;]*m//g' > ${{ inputs.output-path }}/${{ inputs.test-results-file }})
         elif [[ "$(jq -r '.scripts["test"]' package.json)" != "null" ]]
         then
-          npm run test -- --coverage 2>&1 | tee ${{ inputs.output-path }}/${{ inputs.test-results-file }}
+          npm run test -- --coverage 2>&1 | tee >(sed -r 's/\x1b\[[0-9;]*m//g' > ${{ inputs.output-path }}/${{ inputs.test-results-file }})
         else
           touch ${{ inputs.output-path }}/${{ inputs.test-results-file }}
         fi
@@ -136,8 +136,7 @@ runs:
         SUCCESS=$([ "$RESULT" == "PASS" ] && echo 'true' || echo 'false')
         COVERAGE=$(sed -n '/Coverage summary/,+4p' $FILE | (fgrep 'Lines' || :) | awk '{ print $3 }')
         SUMMARY="$(grep -P '(\d+ tests?|Tests?(?! Files).*?\d+).*?(pass|fail)' $FILE || :)" | sed -E 's/Tests[^\w]+//ig; s/^\s*//; s/\s*$//'
-        SUMMARY="$SUMMARY ($RUNNER)"
-        echo $SUMMARY
+        # SUMMARY="$SUMMARY ($RUNNER)"
 
         echo ::set-output name=result::${RESULT}
         echo ::set-output name=result-emoji::${RESULT_EMOJI}
@@ -185,18 +184,18 @@ runs:
         cat ${{ inputs.output-path }}/${{ inputs.test-results-file }}                               >> $FILE
       shell: bash
 
-    # - id: output-summary
-    #   run: |
-    #     echo "------------------"
-    #     echo "LINT RESULTS"
-    #     cat ${{ inputs.output-path }}/${{ inputs.lint-results-file }}
-    #     echo "------------------"
-    #     echo "TEST RESULTS"
-    #     cat ${{ inputs.output-path }}/${{ inputs.test-results-file }}
-    #     echo "------------------"
-    #     echo "PR COMMENT"
-    #     cat ${{ inputs.output-path }}/${{ inputs.pr-comment-file }}
-    #     echo "------------------"
-    #     echo "EMAIL"
-    #     cat ${{ inputs.output-path }}/${{ inputs.email-file }}
-    #   shell: bash
+    - id: output-summary
+      run: |
+        echo "------------------"
+        echo "LINT RESULTS"
+        cat ${{ inputs.output-path }}/${{ inputs.lint-results-file }}
+        echo "------------------"
+        echo "TEST RESULTS"
+        cat ${{ inputs.output-path }}/${{ inputs.test-results-file }}
+        echo "------------------"
+        echo "PR COMMENT"
+        cat ${{ inputs.output-path }}/${{ inputs.pr-comment-file }}
+        echo "------------------"
+        echo "EMAIL"
+        cat ${{ inputs.output-path }}/${{ inputs.email-file }}
+      shell: bash
