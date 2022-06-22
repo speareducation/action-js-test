@@ -68,6 +68,8 @@ runs:
     # Run & interpret linter
     - id: lint
       name: Lint Files
+      env:
+        CI: '1'
       run: (npm run lint || :) 2>&1 | sed '/error Command failed/,$d' | tee ${{ inputs.output-path }}/${{ inputs.lint-results-file }}
       shell: bash
 
@@ -88,6 +90,8 @@ runs:
     # Run & interpret tests
     - id: test
       name: Run Tests
+      env:
+        CI: '1'
       run: |
         if [[ "$(jq -r '.scripts["test:coverage"]' package.json)" != "null" ]]
         then
