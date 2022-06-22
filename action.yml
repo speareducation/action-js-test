@@ -100,15 +100,39 @@ runs:
         fi
       shell: bash
 
-    - id: test-results
-      name: Process Test Results
+    - id: test-runner
+      name: Identify runner
       run: |
         FILE=${{ inputs.output-path }}/${{ inputs.test-results-file }}
-        RESULT=$([ -z $(grep -P 'Tests:.*\d+ failed' $FILE || :) ] && echo "PASS" || echo "FAIL")
+        if grep -Pq '^>.*? ava ' $FILE
+        then
+          RUNNER=Ava
+        elif grep -Pq '^>.*? vitest ' $FILE
+        then
+          RUNNER=Vitest
+        else
+          RUNNER=Jest
+        fi
+        echo ::set-output name=runner::${RUNNER}
+      shell: bash
+
+
+    - id: test-results
+      name: Process Test Results
+      env:
+        RUNNER: ${{ steps.test-runner.outputs.runner }}
+      # Ava format: "10 tests passed", "2 tests failed"
+      # Vitest format: "Tests  1 failed | 5 passed (6)"
+      # Jest format: "Tests:       24 passed, 24 total"
+      run: |
+        FILE=${{ inputs.output-path }}/${{ inputs.test-results-file }}
+
+        RESULT=$(grep -Pq '(\d+.*tests?|Tests?:.*\d+) failed' $FILE && echo "FAIL" || echo "PASS")
         RESULT_EMOJI=$([ "$RESULT" == "PASS" ] && echo ':white_check_mark:' || echo ':x:')
         SUCCESS=$([ "$RESULT" == "PASS" ] && echo 'true' || echo 'false')
         COVERAGE=$(sed -n '/Coverage summary/,+4p' $FILE | (fgrep 'Lines' || :) | awk '{ print $3 }')
-        SUMMARY="$(grep -E 'Tests[^0-9]+[0-9]' $FILE || :)" | sed -E 's/Tests:?\s+//g'
+        SUMMARY="$(grep -P '(\d+ tests? (pass|fail)|Tests?:?\s+\d+)' $FILE | sed -E 's/tests?\s+//g; s/Tests?:?\s+//g; s/^\s*//; s/\s*$//') ($RUNNER)"
+
         echo ::set-output name=result::${RESULT}
         echo ::set-output name=result-emoji::${RESULT_EMOJI}
         echo ::set-output name=success::${SUCCESS}
