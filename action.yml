@@ -133,11 +133,11 @@ runs:
       run: |
         FILE=${{ inputs.output-path }}/${{ inputs.test-results-file }}
 
-        RESULT=$(grep -Pq '(\d+.*tests?|Tests?:.*\d+) failed' $FILE && echo "FAIL" || echo "PASS")
+        RESULT=$(grep -Piq '(\d+.*tests?|tests?:.*\d+) failed' $FILE && echo "FAIL" || echo "PASS")
         RESULT_EMOJI=$([ "$RESULT" == "PASS" ] && echo ':white_check_mark:' || echo ':x:')
         SUCCESS=$([ "$RESULT" == "PASS" ] && echo 'true' || echo 'false')
         COVERAGE=$(sed -n '/Coverage summary/,+4p' $FILE | (fgrep 'Lines' || :) | awk '{ print $3 }')
-        SUMMARY="$(grep -P '(\d+ tests?|Tests?(?! Files).*?\d+).*?(pass|fail)' $FILE || :)" | sed -E 's/\s*Tests?:?\s*//ig'
+        SUMMARY="$(grep -Pi '(\d+ tests?|Tests?(?! Files).*?\d+).*?(pass|fail)' $FILE | sed -E 's/\s*Tests?:?\s*//ig')"
         SUMMARY="$RUNNER - $SUMMARY"
 
         echo ::set-output name=result::${RESULT}
