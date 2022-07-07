@@ -68,7 +68,10 @@ runs:
     # Run & interpret linter
     - id: lint
       name: Lint Files
-      run: (npm run lint || :) 2>&1 | sed '/error Command failed/,$d' | tee ${{ inputs.output-path }}/${{ inputs.lint-results-file }}
+      env:
+        CI: '1'
+        TERM: dumb
+      run: (npm run lint || :) 2>&1 | sed '/error Command failed/,$d' | tee >(sed -r 's/\x1b\[[0-9;]*m//g' > ${{ inputs.output-path }}/${{ inputs.lint-results-file }})
       shell: bash
 
     - id: lint-results
@@ -88,27 +91,55 @@ runs:
     # Run & interpret tests
     - id: test
       name: Run Tests
+      env:
+        CI: '1'
+        TERM: dumb
       run: |
         if [[ "$(jq -r '.scripts["test:coverage"]' package.json)" != "null" ]]
         then
-          npm run test:coverage 2>&1 | tee ${{ inputs.output-path }}/${{ inputs.test-results-file }}
+          npm run test:coverage 2>&1 | tee >(sed -r 's/\x1b\[[0-9;]*m//g' > ${{ inputs.output-path }}/${{ inputs.test-results-file }})
         elif [[ "$(jq -r '.scripts["test"]' package.json)" != "null" ]]
         then
-          npm run test -- --coverage 2>&1 | tee ${{ inputs.output-path }}/${{ inputs.test-results-file }}
+          npm run test -- --coverage 2>&1 | tee >(sed -r 's/\x1b\[[0-9;]*m//g' > ${{ inputs.output-path }}/${{ inputs.test-results-file }})
         else
           touch ${{ inputs.output-path }}/${{ inputs.test-results-file }}
         fi
       shell: bash
 
-    - id: test-results
-      name: Process Test Results
+    - id: test-runner
+      name: Identify runner
       run: |
         FILE=${{ inputs.output-path }}/${{ inputs.test-results-file }}
-        RESULT=$([ -z $(grep -P 'Tests:.*\d+ failed' $FILE || :) ] && echo "PASS" || echo "FAIL")
+        if grep -Pq '^>.*? ava ' $FILE
+        then
+          RUNNER=Ava
+        elif grep -Pq '^>.*? vitest ' $FILE
+        then
+          RUNNER=Vitest
+        else
+          RUNNER=Jest
+        fi
+        echo ::set-output name=runner::${RUNNER}
+      shell: bash
+
+
+    - id: test-results
+      name: Process Test Results
+      env:
+        RUNNER: ${{ steps.test-runner.outputs.runner }}
+      # Ava format: "10 tests passed", "2 tests failed"
+      # Vitest format: "Tests  1 failed | 5 passed (6)"
+      # Jest format: "Tests:       24 passed, 24 total"
+      run: |
+        FILE=${{ inputs.output-path }}/${{ inputs.test-results-file }}
+
+        RESULT=$(grep -Piq '(\d+.*tests?|tests?:.*\d+) failed' $FILE && echo "FAIL" || echo "PASS")
         RESULT_EMOJI=$([ "$RESULT" == "PASS" ] && echo ':white_check_mark:' || echo ':x:')
         SUCCESS=$([ "$RESULT" == "PASS" ] && echo 'true' || echo 'false')
         COVERAGE=$(sed -n '/Coverage summary/,+4p' $FILE | (fgrep 'Lines' || :) | awk '{ print $3 }')
-        SUMMARY="$(grep -E 'Tests[^0-9]+[0-9]' $FILE || :)" | sed -E 's/Tests:?\s+//g'
+        SUMMARY="$(grep -Pi '(\d+ tests?|Tests?(?! Files).*?\d+).*?(pass|fail)' $FILE | sed -E 's/\s*Tests?:?\s*//ig')"
+        SUMMARY="$RUNNER - $SUMMARY"
+
         echo ::set-output name=result::${RESULT}
         echo ::set-output name=result-emoji::${RESULT_EMOJI}
         echo ::set-output name=success::${SUCCESS}
