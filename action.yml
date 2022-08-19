@@ -167,7 +167,7 @@ runs:
         echo "## $RESULT_EMOJI_JS JS Tests $RESULT_JS"              >> $FILE
         echo "### $SUMMARY_JS; Coverage: $COVERAGE_JS"              >> $FILE
         echo '```'                                                  >> $FILE
-        cat ${{ inputs.output-path }}/${{ inputs.test-results-file }} | sed -n '/Coverage summary/,$p'  >> $FILE
+        cat ${{ inputs.output-path }}/${{ inputs.test-results-file }} | sed -n '/(% Lines|Coverage summary)/,$p'  >> $FILE
         echo '```'                                                  >> $FILE
       shell: bash
 
