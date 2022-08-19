@@ -158,6 +158,7 @@ runs:
         RESULT_EMOJI_JS: ${{ steps.test-results.outputs.result-emoji }}
         COVERAGE_JS: ${{ steps.test-results.outputs.coverage }}
         SUMMARY_JS: ${{ steps.test-results.outputs.summary }}
+        RUNNER: ${{ steps.test-runner.outputs.runner }}
       run: |
         FILE=${{ inputs.output-path }}/${{ inputs.pr-comment-file }}
         ALL_EMOJI=$([ "$RESULT_JS" == "PASS" -a "$RESULT_JS_LINT" == "PASS" ] && echo ':white_check_mark:' || echo ':x:')
@@ -167,7 +168,12 @@ runs:
         echo "## $RESULT_EMOJI_JS JS Tests $RESULT_JS"              >> $FILE
         echo "### $SUMMARY_JS; Coverage: $COVERAGE_JS"              >> $FILE
         echo '```'                                                  >> $FILE
-        cat ${{ inputs.output-path }}/${{ inputs.test-results-file }} | sed -n '/(% Lines|Coverage summary)/,$p'  >> $FILE
+        if [[ "$RUNNER" == "Jest" ]]
+        then
+          cat ${{ inputs.output-path }}/${{ inputs.test-results-file }} | sed -n '/% Lines/,$p'  >> $FILE
+        else
+          cat ${{ inputs.output-path }}/${{ inputs.test-results-file }} | sed -n '/Coverage summary/,$p'  >> $FILE
+        fi
         echo '```'                                                  >> $FILE
       shell: bash
 
