@@ -82,10 +82,10 @@ runs:
         RESULT_EMOJI=$([ "$RESULT" == "PASS" ] && echo ':white_check_mark:' || echo ':x:')
         SUCCESS=$([ "$RESULT" == "PASS" ] && echo 'true' || echo 'false')
         SUMMARY="$(grep -P '\d+ problems \(\d+ errors' $FILE || :)" | sed -E 's/^.*\(//;s/\).*$//'
-        echo ::set-output name=result::${RESULT}
-        echo ::set-output name=result-emoji::${RESULT_EMOJI}
-        echo ::set-output name=success::${SUCCESS}
-        echo ::set-output name=summary::${SUMMARY}
+        echo "result=${RESULT}" >> ${GITHUB_OUTPUT}
+        echo "result-emoji=${RESULT_EMOJI}" >> ${GITHUB_OUTPUT}
+        echo "success=${SUCCESS}" >> ${GITHUB_OUTPUT}
+        echo "summary=${SUMMARY}" >> ${GITHUB_OUTPUT}
       shell: bash
 
     # Run & interpret tests
@@ -119,7 +119,7 @@ runs:
         else
           RUNNER=Jest
         fi
-        echo ::set-output name=runner::${RUNNER}
+        echo "runner=${RUNNER}" >> ${GITHUB_OUTPUT}
       shell: bash
 
 
@@ -144,11 +144,11 @@ runs:
         SUMMARY="$(grep -Pi '(\d+ tests?|Tests?(?! Files).*?\d+).*?(pass|fail)' $FILE | sed -E 's/\s*Tests?:?\s*//ig')"
         SUMMARY="$RUNNER - $SUMMARY"
 
-        echo ::set-output name=result::${RESULT}
-        echo ::set-output name=result-emoji::${RESULT_EMOJI}
-        echo ::set-output name=success::${SUCCESS}
-        echo ::set-output name=coverage::${COVERAGE}
-        echo ::set-output name=summary::${SUMMARY}
+        echo "result=${RESULT}" >> ${GITHUB_OUTPUT}
+        echo "result-emoji=${RESULT_EMOJI}" >> ${GITHUB_OUTPUT}
+        echo "success=${SUCCESS}" >> ${GITHUB_OUTPUT}
+        echo "coverage=${COVERAGE}" >> ${GITHUB_OUTPUT}
+        echo "summary=${SUMMARY}" >> ${GITHUB_OUTPUT}
       shell: bash
 
     # Create PR Text
