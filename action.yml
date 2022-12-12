@@ -168,7 +168,8 @@ runs:
         ALL_EMOJI=$([ "$RESULT_JS" == "PASS" -a "$RESULT_JS_LINT" == "PASS" ] && echo ':white_check_mark:' || echo ':x:')
         echo "# $ALL_EMOJI Test Results"                             > $FILE
         echo "## $RESULT_EMOJI_JS_LINT Linting $RESULT_JS_LINT"     >> $FILE
-        echo "### $SUMMARY_JS_LINT"                                 >> $FILE
+        echo -n "### "                                              >> $FILE
+        echo -n "$SUMMARY_JS_LINT" | base64 -d                      >> $FILE
         echo "## $RESULT_EMOJI_JS JS Tests $RESULT_JS"              >> $FILE
         echo -n "### "                                              >> $FILE
         echo -n $SUMMARY_JS | base64 -d                             >> $FILE
