@@ -157,24 +157,20 @@ runs:
       env:
         RESULT_JS_LINT: ${{ steps.lint-results.outputs.result }}
         RESULT_EMOJI_JS_LINT: ${{ steps.lint-results.outputs.result-emoji }}
-        SUMMARY_JS_LINT: ${{ steps.lint-results.outputs.summary }}
         RESULT_JS: ${{ steps.test-results.outputs.result }}
         RESULT_EMOJI_JS: ${{ steps.test-results.outputs.result-emoji }}
-        COVERAGE_JS: ${{ steps.test-results.outputs.coverage }}
-        SUMMARY_JS: ${{ steps.test-results.outputs.summary }}
         RUNNER: ${{ steps.test-runner.outputs.runner }}
       run: |
+        SUMMARY_JS_LINT=$(echo "${{ steps.lint-results.outputs.summary }}" | base64 -d)
+        SUMMARY_JS=$(echo "${{ steps.test-results.outputs.summary }}" | base64 -d)
+        COVERAGE_JS=$(echo "${{ steps.test-results.outputs.coverage }}" | base64 -d)
         FILE=${{ inputs.output-path }}/${{ inputs.pr-comment-file }}
         ALL_EMOJI=$([ "$RESULT_JS" == "PASS" -a "$RESULT_JS_LINT" == "PASS" ] && echo ':white_check_mark:' || echo ':x:')
         echo "# $ALL_EMOJI Test Results"                             > $FILE
         echo "## $RESULT_EMOJI_JS_LINT Linting $RESULT_JS_LINT"     >> $FILE
-        echo -n "### "                                              >> $FILE
-        echo -n "$SUMMARY_JS_LINT" | base64 -d                      >> $FILE
+        echo "### $SUMMARY_JS_LINT"                                 >> $FILE
         echo "## $RESULT_EMOJI_JS JS Tests $RESULT_JS"              >> $FILE
-        echo -n "### "                                              >> $FILE
-        echo -n $SUMMARY_JS | base64 -d                             >> $FILE
-        echo -n "; Coverage: "                                      >> $FILE
-        echo -n $COVERAGE_JS | base64 -d                            >> $FILE
+        echo "### $SUMMARY_JS; Coverage: $COVERAGE_JS"              >> $FILE
         echo '```'                                                  >> $FILE
         if [[ "$RUNNER" == "Jest" ]]
         then
