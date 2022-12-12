@@ -147,8 +147,8 @@ runs:
         echo "result=${RESULT}" >> ${GITHUB_OUTPUT}
         echo "result-emoji=${RESULT_EMOJI}" >> ${GITHUB_OUTPUT}
         echo "success=${SUCCESS}" >> ${GITHUB_OUTPUT}
-        echo "coverage=${COVERAGE}" >> ${GITHUB_OUTPUT}
-        echo "summary=${SUMMARY}" >> ${GITHUB_OUTPUT}
+        echo "coverage=$(echo ${COVERAGE} | base64)" >> ${GITHUB_OUTPUT}
+        echo "summary=$(echo ${SUMMARY} | base64)" >> ${GITHUB_OUTPUT}
       shell: bash
 
     # Create PR Text
@@ -170,7 +170,9 @@ runs:
         echo "## $RESULT_EMOJI_JS_LINT Linting $RESULT_JS_LINT"     >> $FILE
         echo "### $SUMMARY_JS_LINT"                                 >> $FILE
         echo "## $RESULT_EMOJI_JS JS Tests $RESULT_JS"              >> $FILE
-        echo "### $SUMMARY_JS; Coverage: $COVERAGE_JS"              >> $FILE
+        echo -n "### "                                              >> $FILE
+        echo -n $SUMMARY_JS | base64 -d                             >> $FILE
+        echo "; Coverage: $COVERAGE_JS"                             >> $FILE
         echo '```'                                                  >> $FILE
         if [[ "$RUNNER" == "Jest" ]]
         then
