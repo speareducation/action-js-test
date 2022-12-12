@@ -173,7 +173,8 @@ runs:
         echo "## $RESULT_EMOJI_JS JS Tests $RESULT_JS"              >> $FILE
         echo -n "### "                                              >> $FILE
         echo -n $SUMMARY_JS | base64 -d                             >> $FILE
-        echo "; Coverage: $COVERAGE_JS"                             >> $FILE
+        echo -n "; Coverage: "                                      >> $FILE
+        echo -n $COVERAGE_JS | base64 -d                            >> $FILE
         echo '```'                                                  >> $FILE
         if [[ "$RUNNER" == "Jest" ]]
         then
