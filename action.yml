@@ -147,8 +147,12 @@ runs:
         echo "result=${RESULT}" >> ${GITHUB_OUTPUT}
         echo "result-emoji=${RESULT_EMOJI}" >> ${GITHUB_OUTPUT}
         echo "success=${SUCCESS}" >> ${GITHUB_OUTPUT}
-        echo "coverage=$(echo ${COVERAGE} | base64)" >> ${GITHUB_OUTPUT}
-        echo "summary=$(echo ${SUMMARY} | base64)" >> ${GITHUB_OUTPUT}
+        echo "coverage<<EOT" >> ${GITHUB_OUTPUT}
+        echo ${COVERAGE} >> ${GITHUB_OUTPUT}
+        ECHO "EOT" >> ${GITHUB_OUTPUT}
+        echo "summary<<EOT" >> ${GITHUB_OUTPUT}
+        echo ${SUMMARY} >> ${GITHUB_OUTPUT}
+        echo "EOT" >> ${GITHUB_OUTPUT}
       shell: bash
 
     # Create PR Text
@@ -161,9 +165,9 @@ runs:
         RESULT_EMOJI_JS: ${{ steps.test-results.outputs.result-emoji }}
         RUNNER: ${{ steps.test-runner.outputs.runner }}
       run: |
-        SUMMARY_JS_LINT=$(echo "${{ steps.lint-results.outputs.summary }}" | base64 -d)
-        SUMMARY_JS=$(echo "${{ steps.test-results.outputs.summary }}" | base64 -d)
-        COVERAGE_JS=$(echo "${{ steps.test-results.outputs.coverage }}" | base64 -d)
+        SUMMARY_JS_LINT=$(echo "${{ steps.lint-results.outputs.summary }}")
+        SUMMARY_JS=$(echo "${{ steps.test-results.outputs.summary }}")
+        COVERAGE_JS=$(echo "${{ steps.test-results.outputs.coverage }}")
         FILE=${{ inputs.output-path }}/${{ inputs.pr-comment-file }}
         ALL_EMOJI=$([ "$RESULT_JS" == "PASS" -a "$RESULT_JS_LINT" == "PASS" ] && echo ':white_check_mark:' || echo ':x:')
         echo "# $ALL_EMOJI Test Results"                             > $FILE
