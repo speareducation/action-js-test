@@ -147,12 +147,12 @@ runs:
         echo "result=${RESULT}" >> ${GITHUB_OUTPUT}
         echo "result-emoji=${RESULT_EMOJI}" >> ${GITHUB_OUTPUT}
         echo "success=${SUCCESS}" >> ${GITHUB_OUTPUT}
-        echo "coverage<<EOTCOVERAGE" >> ${GITHUB_OUTPUT}
+        echo "coverage<<EOT" >> ${GITHUB_OUTPUT}
         echo ${COVERAGE} >> ${GITHUB_OUTPUT}
-        echo "EOTCOVERAGE" >> ${GITHUB_OUTPUT}
-        echo "summary<<EOTSUMMARY" >> ${GITHUB_OUTPUT}
+        echo "EOT" >> ${GITHUB_OUTPUT}
+        echo "summary<<EOT" >> ${GITHUB_OUTPUT}
         echo ${SUMMARY} >> ${GITHUB_OUTPUT}
-        echo "EOTSUMMARY" >> ${GITHUB_OUTPUT}
+        echo "EOT" >> ${GITHUB_OUTPUT}
       shell: bash
 
     # Create PR Text
