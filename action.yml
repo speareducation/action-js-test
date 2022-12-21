@@ -149,7 +149,7 @@ runs:
         echo "success=${SUCCESS}" >> ${GITHUB_OUTPUT}
         echo "coverage<<EOTCOVERAGE" >> ${GITHUB_OUTPUT}
         echo ${COVERAGE} >> ${GITHUB_OUTPUT}
-        ECHO "EOTCOVERAGE" >> ${GITHUB_OUTPUT}
+        echo "EOTCOVERAGE" >> ${GITHUB_OUTPUT}
         echo "summary<<EOTSUMMARY" >> ${GITHUB_OUTPUT}
         echo ${SUMMARY} >> ${GITHUB_OUTPUT}
         echo "EOTSUMMARY" >> ${GITHUB_OUTPUT}
