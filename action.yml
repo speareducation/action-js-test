@@ -78,7 +78,7 @@ runs:
       name: Process Lint Results
       run: |
         FILE=${{ inputs.output-path }}/${{ inputs.lint-results-file }}
-        RESULT=$([ -z $(grep -P '.*\d+ problems' $FILE || :) ] && echo "PASS" || echo "FAIL")
+        RESULT=$([ -z "$(grep -P '.*\d+ problems' $FILE || :)" ] && echo "PASS" || echo "FAIL")
         RESULT_EMOJI=$([ "$RESULT" == "PASS" ] && echo ':white_check_mark:' || echo ':x:')
         SUCCESS=$([ "$RESULT" == "PASS" ] && echo 'true' || echo 'false')
         SUMMARY="$(grep -P '\d+ problems \(\d+ errors' $FILE || :)" | sed -E 's/^.*\(//;s/\).*$//'
